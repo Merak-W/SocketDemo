@@ -3,8 +3,10 @@ package com.wyf.socket
 import android.net.wifi.WifiManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.tabs.TabLayout
 import com.wyf.socket.client.ClientCallback
 import com.wyf.socket.client.SocketClient
@@ -16,7 +18,9 @@ class MainActivity : AppCompatActivity(), ServerCallback, ClientCallback {
 
     private val TAG = MainActivity::class.java.simpleName
     private lateinit var binding: ActivityMainBinding
-    private val buffer = StringBuffer()
+
+    private val message = ArrayList<Message>()
+    private lateinit var msgAdapter: MsgAdapter
 
     //当前是否为服务端
     private var isServer = true
@@ -68,7 +72,9 @@ class MainActivity : AppCompatActivity(), ServerCallback, ClientCallback {
                     SocketServer.startServer(this);true
                 }
             //显示日志
-            showInfo(if (openSocket) "开启服务" else "关闭服务")
+            Toast.makeText(this,
+                if (openSocket) "开启服务" else "关闭服务",
+                Toast.LENGTH_SHORT).show()
             //改变button文字
             binding.btnStartService.text = if (openSocket) "关闭服务" else "开启服务"
         }
@@ -87,7 +93,9 @@ class MainActivity : AppCompatActivity(), ServerCallback, ClientCallback {
             } else {
                 SocketClient.connectServer(ip, this);true
             }
-            showInfo(if (connectSocket) "连接服务" else "关闭连接")
+            Toast.makeText(this,
+                if (connectSocket) "连接服务" else "关闭连接",
+                Toast.LENGTH_SHORT).show()
             binding.btnConnectService.text = if (connectSocket) "关闭连接" else "连接服务"
         }
 
@@ -121,14 +129,26 @@ class MainActivity : AppCompatActivity(), ServerCallback, ClientCallback {
             }
             //发送后清空输入框
             binding.etMessage.setText("")
+            updateList(if(isServer) 0 else 1, msg)
+        }
+
+        msgAdapter = MsgAdapter(message)
+        binding.rvMsg.apply {
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = msgAdapter
         }
     }
 
-    private fun showInfo(info: String) {
-        buffer.append(info).append("\n")
+    //更新列表
+    private fun updateList(type:Int, msg: String) {
+        message.add(Message(msg, type))
         runOnUiThread {
-            binding.tvInfo.text = buffer.toString()
+            (if (message.size == 0) 0 else message.size - 1).apply {
+                msgAdapter.notifyItemChanged(this)
+                binding.rvMsg.smoothScrollToPosition(this)
+            }
         }
+
     }
 
     private fun getIp() =
@@ -138,14 +158,14 @@ class MainActivity : AppCompatActivity(), ServerCallback, ClientCallback {
         "${(ip and 0xFF)}.${(ip shr 8 and 0xFF)}.${(ip shr 16 and 0xFF)}.${(ip shr 24 and 0xFF)}"
 
     override fun receiveClientMsg(success: Boolean, msg: String) {
-        showInfo("ClientMsg: $msg")
+        updateList(Message.TYPE_SENT,msg)
     }
 
     override fun receiveSeverMsg(msg: String) {
-        showInfo("ServerMsg: $msg")
+        updateList(Message.TYPE_RECEIVED,msg)
     }
 
     override fun otherMsg(msg: String) {
-        showInfo(msg)
+        Log.d(TAG, msg)
     }
 }

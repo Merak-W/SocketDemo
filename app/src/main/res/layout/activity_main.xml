@@ -89,13 +89,11 @@
             android:text="连接服务" />
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tv_info"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_msg"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
-        android:padding="16dp"
-        android:text="信息" />
+        android:layout_weight="1"/>
 
     <LinearLayout
         android:layout_width="match_parent"
