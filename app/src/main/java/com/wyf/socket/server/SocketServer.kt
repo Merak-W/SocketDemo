@@ -1,4 +1,4 @@
-package com.wyf.socket.server
+package com.wyf.socket.bean.server
 
 import android.util.Log
 import java.io.IOException
