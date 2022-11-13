@@ -6,6 +6,9 @@ import java.io.InputStream
 import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.Socket
+import java.util.concurrent.Executor
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 object SocketClient {
     private val TAG = SocketClient::class.java.simpleName
@@ -18,6 +21,9 @@ object SocketClient {
     private var inputStreamReader: InputStreamReader? = null
 
     private lateinit var mCallback: ClientCallback
+
+    //声明线程池
+    private var clientThreadPoll: ExecutorService? = null
 
     //连接服务
     fun connectServer(ipAddress: String, callback: ClientCallback) {
@@ -41,26 +47,34 @@ object SocketClient {
             shutdownOutput()
             close()
         }
+        clientThreadPoll?.shutdownNow()
+        clientThreadPoll = null
         Log.d(TAG, "关闭连接")
     }
 
     //发送数据至服务器
     fun sendToServer(msg: String) {
-        Thread {
-            if (socket!!.isClosed) {
-                Log.e(TAG, "sendToServer: Socket is closed")
-                return@Thread
+        if(clientThreadPoll == null) {
+            clientThreadPoll = Executors.newCachedThreadPool()
+        }
+        clientThreadPoll?.execute {
+            if(socket == null) {
+                mCallback.otherMsg("客户端未连接")
+                return@execute
+            }
+            if(socket!!.isClosed) {
+                mCallback.otherMsg("Socket已关闭")
+                return@execute
             }
             outputStream = socket?.getOutputStream()
             try {
                 outputStream?.write(msg.toByteArray())
                 outputStream?.flush()
-                mCallback.otherMsg("toServer:$msg")
             } catch (e: IOException) {
                 e.printStackTrace()
-                Log.e(TAG, "向服务端发送消息失败")
+                mCallback.otherMsg("向服务端发送消息：$msg 失败")
             }
-        }.start()
+        }
     }
 
     class ClientThread(private val socket: Socket, private val callback: ClientCallback) :

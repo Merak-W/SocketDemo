@@ -6,8 +6,8 @@ import android.view.MenuItem
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.wyf.socket.Message
 import com.wyf.socket.MsgAdapter
-import com.wyf.socket.bean.server.ServerCallback
-import com.wyf.socket.bean.server.SocketServer
+import com.wyf.socket.server.ServerCallback
+import com.wyf.socket.server.SocketServer
 import com.wyf.socket.databinding.ActivityServerBinding
 
 class ServerActivity : BaseActivity(), ServerCallback {

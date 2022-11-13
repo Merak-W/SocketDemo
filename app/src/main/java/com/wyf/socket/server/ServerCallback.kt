@@ -1,4 +1,4 @@
-package com.wyf.socket.bean.server
+package com.wyf.socket.server
 
 interface ServerCallback {
     //接收客户端的消息

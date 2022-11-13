@@ -11,8 +11,8 @@ import com.google.android.material.tabs.TabLayout
 import com.wyf.socket.client.ClientCallback
 import com.wyf.socket.client.SocketClient
 import com.wyf.socket.databinding.ActivityMainBinding
-import com.wyf.socket.bean.server.ServerCallback
-import com.wyf.socket.bean.server.SocketServer
+import com.wyf.socket.server.ServerCallback
+import com.wyf.socket.server.SocketServer
 
 class MainActivity : AppCompatActivity(), ServerCallback, ClientCallback {
 

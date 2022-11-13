@@ -1,4 +1,4 @@
-package com.wyf.socket.bean.server
+package com.wyf.socket.server
 
 import android.util.Log
 import java.io.IOException
@@ -6,6 +6,8 @@ import java.io.InputStream
 import java.io.OutputStream
 import java.net.ServerSocket
 import java.net.Socket
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 object SocketServer {
     private val TAG = SocketServer::class.java.simpleName
@@ -17,6 +19,9 @@ object SocketServer {
 
     private lateinit var mCallback: ServerCallback
     private lateinit var outputStream: OutputStream
+
+    //声明线程池
+    private var serverThreadPool: ExecutorService? = null
 
     var result = true
 
@@ -47,26 +52,37 @@ object SocketServer {
             close()
         }
         serverSocket?.close()
+
+        //关闭线程池
+        serverThreadPool?.shutdownNow()
+        serverThreadPool = null
+        Log.d(TAG, "关闭连接")
     }
 
     //发送到客户端
     fun sendToClient(msg: String) {
-        Thread {
+        if(serverThreadPool == null) {
+            serverThreadPool = Executors.newCachedThreadPool()  //没有核心线程，全是非核心线程，存活时间60s
+        }
+        serverThreadPool?.execute {
+            //没有客户端连接时防止空指针异常造成闪退
+            if(socket == null) {
+                mCallback.otherMsg("客户端还未连接")
+                return@execute
+            }
             if(socket!!.isClosed) {
-                Log.e(TAG, "sendToClient: Socket is closed")
-                return@Thread
+                mCallback.otherMsg("Socket已关闭")
+                return@execute
             }
             outputStream = socket!!.getOutputStream()
             try {
                 outputStream.write(msg.toByteArray())
                 outputStream.flush()
-                mCallback.otherMsg(("toClient:$msg"))
-                Log.d(TAG, "发送到客户端成功")
             } catch (e: IOException) {
                 e.printStackTrace()
-                Log.e(TAG, "向客户端发送消息失败")
+                mCallback.otherMsg("向客户端发送消息：$msg 失败")
             }
-        }.start()
+        }
     }
 
     class  ServerThread(private val socket: Socket, private val callback: ServerCallback) :
